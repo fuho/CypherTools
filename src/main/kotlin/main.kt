@@ -8,7 +8,6 @@ data class Rectangle(val a: Point, val b: Point) {
     operator fun contains(p: Point) = p.x in a.x..b.x && p.y in a.y..b.y
 }
 
-
 enum class CardinalDirection(val point: Point) {
     SOUTH(Point(0, 1)),
     WEST(Point(-1, 0)),
@@ -23,12 +22,12 @@ data class BoardField(var x: Int, var y: Int, val char: Char)
 
 data class Board(val positions: Iterable<BoardField>) {
 
+    private val maxX get(): Int = positions.maxOf { it.x }
+    private val maxY get(): Int = positions.maxOf { it.y }
+
     private fun getPosition(x: Int, y: Int): BoardField? = positions.firstOrNull() {
         it.y == y && it.x == x
     }
-
-    private val maxX get(): Int = positions.maxOf { it.x }
-    private val maxY get(): Int = positions.maxOf { it.y }
 
     fun solve() {
         var cardinalDirectionIndex = 0
@@ -82,18 +81,18 @@ data class Board(val positions: Iterable<BoardField>) {
 fun solveCypher(input: String) {
     println("Input:\n$input")
     val positions = mutableListOf<BoardField>()
-    input.lines().forEachIndexed { row, line ->
-        line.trim().split(" ").forEachIndexed { column, letter ->
-            positions.add(BoardField(column, row, letter.first()))
+    input.lines().forEachIndexed { y, line ->
+        line.trim().split(" ").forEachIndexed { x, value ->
+            positions.add(BoardField(x, y, value.first()))
         }
     }
     val board = Board(positions)
-    println("Solving: \n$board \n Solved!:\n${board.also { it.solve() }}")
+    println("Solving: \n$board \n Solved!:\n${board.apply { solve() }}")
 }
 
 fun main(args: Array<String>) {
-    args[0].let { problempath ->
-        if (problempath.isBlank()) return
-        solveCypher(File(problempath).readText().trim())
+    args[0].let { path ->
+        if (path.isBlank()) return
+        solveCypher(File(path).readText().trim())
     }
 }
