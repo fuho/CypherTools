@@ -15,35 +15,55 @@ fun solve(input: String) {
 data class Position(val x: Int, val y: Int, val char: Char)
 
 data class Board(val positions: Iterable<Position>) {
+
+    fun get(x: Int, y: Int): Position? = positions.firstOrNull() {
+        it.y == y && it.x == x
+    }
+
     override fun toString(): String {
-        val width = positions.maxOf { it.x }
-        val height = positions.maxOf { it.y }
+        val maxCol = positions.maxOf { it.x }
+        val maxRow = positions.maxOf { it.y }
         val rows = mutableListOf<String>()
-        for (row in 0..height) {
-            rows.add(positions
-                .filter { it.y == row }
-                .sortedBy { it.x }
+        for (row in 0..maxRow) {
+            val rowValues = mutableListOf<Position?>()
+            for (col in 0..maxCol) {
+                rowValues.add(get(col, row))
+            }
+            rows.add(rowValues
                 .joinToString(
                     prefix = "\n│ ",
                     separator = " │ ",
                     postfix = " │",
-                    transform = { p -> p.char.toString() }
+                    transform = { p -> p?.char?.toString() ?: " " }
                 )
             )
         }
         return rows.joinToString(
-            prefix = "╭─" + "──┬─".repeat(width) + "──╮",
-            separator = "\n├─" + "──┼─".repeat(width) + "──┤",
-            postfix = "\n╰─" + "──┴─".repeat(width) + "──╯",
+            prefix = "╭─" + "──┬─".repeat(maxCol) + "──╮",
+            separator = "\n├─" + "──┼─".repeat(maxCol) + "──┤",
+            postfix = "\n╰─" + "──┴─".repeat(maxCol) + "──╯",
         )
     }
 }
 
 
 fun main(args: Array<String>) {
-//    println("Hello World! args.size: ${args.size} args: ${args.joinToString()}")
     args[0].let { problempath ->
         if (problempath.isBlank()) return
         solve(File(problempath).readText().trim())
+
+/*
+        println(
+            Board(
+                listOf(
+                    Position(0, 0, '0'),
+                    Position(0, 2, '8'),
+                    Position(10, 5, 'X'),
+                    Position(3, 2, 'B'),
+                    Position(3, 3, 'F'),
+                )
+            )
+        )
+*/
     }
 }
