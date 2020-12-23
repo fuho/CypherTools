@@ -1,33 +1,66 @@
 import java.io.File
 
-fun solve(input: String) {
-    println("Input:\n$input")
-    val positions = mutableListOf<Position>()
-    input.lines().forEachIndexed { row, line ->
-        line.trim().split(" ").forEachIndexed { column, letter ->
-            positions.add(Position(column, row, letter.first()))
-        }
-    }
-    val board = Board(positions)
-    println(board)
+data class Point(val x: Int, val y: Int) {
+    operator fun plus(v: Point) = Point(x + v.x, y + v.y)
 }
 
-data class Position(val x: Int, val y: Int, val char: Char)
+data class Rectangle(val a: Point, val b: Point) {
+    operator fun contains(p: Point) = p.x in a.x..b.x && p.y in a.y..b.y
+}
 
-data class Board(val positions: Iterable<Position>) {
 
-    fun get(x: Int, y: Int): Position? = positions.firstOrNull() {
+enum class CardinalDirection(val point: Point) {
+    SOUTH(Point(0, 1)),
+    WEST(Point(-1, 0)),
+    NORTH(Point(0, -1)),
+    EAST(Point(1, 0));
+
+    val x get() = point.x
+    val y get() = point.y
+}
+
+data class BoardField(var x: Int, var y: Int, val char: Char)
+
+data class Board(val positions: Iterable<BoardField>) {
+
+    private fun getPosition(x: Int, y: Int): BoardField? = positions.firstOrNull() {
         it.y == y && it.x == x
     }
 
+    private val maxX get(): Int = positions.maxOf { it.x }
+    private val maxY get(): Int = positions.maxOf { it.y }
+
+    fun solve() {
+        var cardinalDirectionIndex = 0
+        val world = Rectangle(Point(0, 0), Point(maxX, maxY))
+        for (y in maxY downTo 0) {
+            for (x in maxX downTo 0) {
+                cardinalDirectionIndex %= CardinalDirection.values().size
+                val cardinalDirection = CardinalDirection.values()[cardinalDirectionIndex++]
+                if (world.contains(Point(x, y) + cardinalDirection.point)) {
+                    val itemA = getPosition(x, y)
+                    val itemB = getPosition(x + cardinalDirection.x, y + cardinalDirection.y)
+                    itemA?.let {
+                        it.x += cardinalDirection.x
+                        it.y += cardinalDirection.y
+                    }
+                    itemB?.let {
+                        it.x -= cardinalDirection.x
+                        it.y -= cardinalDirection.y
+                    }
+                } else {
+                    continue
+                }
+            }
+        }
+    }
+
     override fun toString(): String {
-        val maxCol = positions.maxOf { it.x }
-        val maxRow = positions.maxOf { it.y }
         val rows = mutableListOf<String>()
-        for (row in 0..maxRow) {
-            val rowValues = mutableListOf<Position?>()
-            for (col in 0..maxCol) {
-                rowValues.add(get(col, row))
+        for (row in 0..maxY) {
+            val rowValues = mutableListOf<BoardField?>()
+            for (col in 0..maxX) {
+                rowValues.add(getPosition(col, row))
             }
             rows.add(rowValues
                 .joinToString(
@@ -39,31 +72,28 @@ data class Board(val positions: Iterable<Position>) {
             )
         }
         return rows.joinToString(
-            prefix = "╭─" + "──┬─".repeat(maxCol) + "──╮",
-            separator = "\n├─" + "──┼─".repeat(maxCol) + "──┤",
-            postfix = "\n╰─" + "──┴─".repeat(maxCol) + "──╯",
+            prefix = "╭─" + "──┬─".repeat(maxX) + "──╮",
+            separator = "\n├─" + "──┼─".repeat(maxX) + "──┤",
+            postfix = "\n╰─" + "──┴─".repeat(maxX) + "──╯",
         )
     }
 }
 
+fun solveCypher(input: String) {
+    println("Input:\n$input")
+    val positions = mutableListOf<BoardField>()
+    input.lines().forEachIndexed { row, line ->
+        line.trim().split(" ").forEachIndexed { column, letter ->
+            positions.add(BoardField(column, row, letter.first()))
+        }
+    }
+    val board = Board(positions)
+    println("Solving: \n$board \n Solved!:\n${board.also { it.solve() }}")
+}
 
 fun main(args: Array<String>) {
     args[0].let { problempath ->
         if (problempath.isBlank()) return
-        solve(File(problempath).readText().trim())
-
-/*
-        println(
-            Board(
-                listOf(
-                    Position(0, 0, '0'),
-                    Position(0, 2, '8'),
-                    Position(10, 5, 'X'),
-                    Position(3, 2, 'B'),
-                    Position(3, 3, 'F'),
-                )
-            )
-        )
-*/
+        solveCypher(File(problempath).readText().trim())
     }
 }
